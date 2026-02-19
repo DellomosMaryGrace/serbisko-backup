@@ -15,12 +15,26 @@
 </head>
 <body class="bg-custom-gradient min-h-screen flex flex-col items-center justify-center p-4">
 
-    <div class="absolute top-4 left-4 bg-red-100 text-red-600 px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 shadow-sm">
-        <span class="w-2 h-2 bg-red-600 rounded-full animate-pulse"></span>
-        LIS Server: Offline
+    <div class="absolute top-4 left-4 flex flex-col gap-2 z-50">
+        
+        <div id="status-ocr" class="bg-gray-100 text-gray-600 px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 shadow-sm border border-gray-200 transition-colors duration-300">
+            <span class="indicator-dot w-2 h-2 bg-gray-400 rounded-full"></span>
+            <span class="indicator-text">OCR Engine: Checking...</span>
+        </div>
+
+        <div id="status-lis" class="bg-gray-100 text-gray-600 px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 shadow-sm border border-gray-200 transition-colors duration-300">
+            <span class="indicator-dot w-2 h-2 bg-gray-400 rounded-full"></span>
+            <span class="indicator-text">LIS Verifier: Checking...</span>
+        </div>
+
+        <div id="status-arduino" class="bg-gray-100 text-gray-600 px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 shadow-sm border border-gray-200 transition-colors duration-300">
+            <span class="indicator-dot w-2 h-2 bg-gray-400 rounded-full"></span>
+            <span class="indicator-text">Arduino Link: Checking...</span>
+        </div>
+
     </div>
 
-    <div class="text-center mb-8 max-w-2xl">
+    <div class="text-center mb-8 max-w-2xl mt-16 lg:mt-0">
         <h1 class="text-3xl md:text-4xl font-bold text-green-900 mb-2">
             Capture your <span class="text-blue-900">{{ session('current_doc', 'Report Card') }}</span>
         </h1>
@@ -54,7 +68,6 @@
             <div class="bg-black rounded-3xl overflow-hidden shadow-2xl border-4 border-blue-900 aspect-video relative group">
                 
                 <video id="camera-stream" autoplay playsinline class="w-full h-full object-cover transform scale-x-[-1]"></video>
-                
                 <canvas id="capture-canvas" class="hidden w-full h-full object-cover"></canvas>
 
                 <div id="camera-message" class="absolute inset-0 flex items-center justify-center text-white text-center p-4 bg-black/50">
@@ -86,6 +99,75 @@
     </div>
 
     <script>
+        // ==========================================
+        // 1. LIVE SERVER PINGING LOGIC
+        // ==========================================
+        
+        // Define the ports for your python services
+        // NOTE: If you changed OCR to port 9001, update it here!
+        const SERVERS = {
+            ocr: { url: 'http://localhost:5000/ocr', method: 'POST', label: 'OCR Engine' },
+            lis: { url: 'http://localhost:5001/health', method: 'GET', label: 'LIS Verifier' },
+            arduino: { url: 'http://localhost:8080/api/status', method: 'GET', label: 'Arduino Link' }
+        };
+
+        function updateBadge(id, isOnline, label) {
+            const badge = document.getElementById(`status-${id}`);
+            const dot = badge.querySelector('.indicator-dot');
+            const text = badge.querySelector('.indicator-text');
+
+            text.textContent = `${label}: ${isOnline ? 'Online' : 'Offline'}`;
+
+            if (isOnline) {
+                // Green Online Styling
+                badge.className = "bg-green-100 text-green-700 border-green-200 px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 shadow-sm border transition-colors duration-300";
+                dot.className = "indicator-dot w-2 h-2 bg-green-500 rounded-full animate-pulse";
+            } else {
+                // Red Offline Styling
+                badge.className = "bg-red-100 text-red-700 border-red-200 px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 shadow-sm border transition-colors duration-300";
+                dot.className = "indicator-dot w-2 h-2 bg-red-600 rounded-full";
+            }
+        }
+
+        async function pingServer(id, config) {
+            try {
+                // Set a 2-second timeout so it doesn't hang forever if the server is off
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 2000);
+                
+                const response = await fetch(config.url, { 
+                    method: config.method, 
+                    signal: controller.signal 
+                });
+                
+                clearTimeout(timeoutId);
+
+                // Even if OCR returns 400 (Bad Request because we sent no image), it means the server is ALIVE
+                if (response.status === 200 || response.status === 400 || response.status === 405) {
+                    updateBadge(id, true, config.label);
+                } else {
+                    updateBadge(id, false, config.label);
+                }
+            } catch (error) {
+                // Network error means server is completely offline
+                updateBadge(id, false, config.label);
+            }
+        }
+
+        function checkAllServers() {
+            pingServer('ocr', SERVERS.ocr);
+            pingServer('lis', SERVERS.lis);
+            pingServer('arduino', SERVERS.arduino);
+        }
+
+        // Check immediately, then every 3 seconds
+        checkAllServers();
+        setInterval(checkAllServers, 3000);
+
+
+        // ==========================================
+        // 2. CAMERA CAPTURE LOGIC
+        // ==========================================
         const video = document.getElementById('camera-stream');
         const canvas = document.getElementById('capture-canvas');
         const message = document.getElementById('camera-message');
@@ -94,14 +176,12 @@
         const retakeBtn = document.getElementById('retake-btn');
         const imageDataInput = document.getElementById('image-data');
 
-        // 1. Start Camera on Load
         async function startCamera() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true });
                 video.srcObject = stream;
-                message.classList.add('hidden'); // Hide "Requesting..." text
+                message.classList.add('hidden');
             } catch (err) {
-                console.error("Error accessing camera: ", err);
                 message.textContent = "⚠️ Camera access denied or not available.";
                 message.classList.remove('hidden');
             }
@@ -109,18 +189,14 @@
 
         startCamera();
 
-        // 2. Capture Image Logic
         captureBtn.addEventListener('click', () => {
-            // Draw video frame to canvas
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             canvas.getContext('2d').drawImage(video, 0, 0);
 
-            // Convert to Base64 string for form submission
             const dataURL = canvas.toDataURL('image/jpeg');
             imageDataInput.value = dataURL;
 
-            // UI Toggle
             video.classList.add('hidden');
             canvas.classList.remove('hidden');
             captureBtn.classList.add('hidden');
@@ -128,7 +204,6 @@
             actionButtons.classList.add('flex');
         });
 
-        // 3. Retake Logic
         retakeBtn.addEventListener('click', () => {
             video.classList.remove('hidden');
             canvas.classList.add('hidden');
