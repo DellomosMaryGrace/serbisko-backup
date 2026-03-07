@@ -7,7 +7,7 @@
                 <li><a href="{{ route('admin.students') }}" class="text-[16px] font-medium text-gray-500 hover:text-[#00923F] transition-colors">Students</a></li>
                 <li class="flex text-[16px] font-bold text-[#00923F]">
                     <span class="mx-2 text-gray-400 select-none">></span>
-                    <span>{{ $student->first_name }} {{ $student->last_name }}'s Profile</span>
+                    <span>{{ $student->first_name }} {{ $student->last_name }} {{ $student->extension_name ? $student->extension_name : '' }}'s Profile</span>
                 </li>
             </ol>
         </nav>
@@ -19,7 +19,7 @@
     
     <div class="bg-[#F7FBF9]/40 rounded-xl shadow-md border border-gray-100 p-5">
         <h2 class="text-[#005288] text-2xl font-extrabold uppercase tracking-tight">
-            {{ $student->first_name }} {{ $student->middle_name ? substr($student->middle_name, 0, 1) . '.' : '' }} {{ $student->last_name }}
+            {{ $student->first_name }} {{ $student->middle_name ? substr($student->middle_name, 0, 1) . '.' : '' }} {{ $student->last_name }} {{ $student->extension_name ? $student->extension_name : '' }}
         </h2>
         <h3 class="text-gray-500 text-sm font-bold uppercase tracking-tight">{{ $student->lrn }}</h3>
     </div>
@@ -61,7 +61,7 @@
                 'Last Name:' => $student->last_name??'—', 'Birthplace:' => $student->place_of_birth??'—',
                 'First Name:' => $student->first_name??'—', 'Age:' => $age,
                 'Middle Name:' => $student->middle_name??'—', 'Mother Tongue:' => $student->mother_tongue??'—',
-                'Extension:' => $student->extension_name??'—', 'Gender:' => $student->sex??'—',
+                'Extension:' => $student->extension_name ?? '—', 'Gender:' => $student->sex??'—',
             ]) !!}
         </div>
 

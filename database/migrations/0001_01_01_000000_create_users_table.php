@@ -22,9 +22,10 @@ return new class extends Migration
                 // Login Identifiers
                 $table->date('birthday')->index(); 
                 $table->string('password'); // This will store the hashed LRN or Temp ID
+                $table->timestamp('password_changed_at')->nullable(); // for password changing policy
                 
                 // Access Control
-                $table->enum('role', ['admin', 'teacher', 'student'])->default('student');
+                $table->enum('role', ['admin', 'facilitator', 'student'])->default('student');
                 
                 $table->timestamps(); // created_at and updated_at
             });

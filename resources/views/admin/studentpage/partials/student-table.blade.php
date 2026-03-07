@@ -33,15 +33,31 @@
             <tbody class="divide-y divide-gray-200">
                 @forelse($students as $student)
                     @php
+                        // 1. Handle Middle Initial
                         $middleInitial = !empty($student->middle_name) 
                             ? strtoupper(substr($student->middle_name, 0, 1)) . '.' 
                             : '';
-                        $fullName = trim("{$student->first_name} {$middleInitial} {$student->last_name} {$student->extension_name}");
+
+                        // 2. Format First Name
+                        $firstNameTitle = ucwords(strtolower($student->first_name));
+
+                        // 3. Access Extension (Assuming it's in the students table)
+                        // If it is in the 'users' table, use: $student->user->extension_name
+                        $extension = $student->extension_name ?? '';
+                        $nameWithInitial = trim("{$firstNameTitle} {$middleInitial}");
+
+                        // 4. Combine and Clean Spacing
+                        $coloredPart = !empty($extension) 
+                                ? "{$nameWithInitial}, {$extension}" 
+                                : $nameWithInitial;
                     @endphp
                     <tr class="hover:bg-gray-100 transition-colors">
                         <td class="py-3 px-4 text-left text-[11px] text-gray-600 font-medium">{{ $student->lrn }}</td>
-                        <td class="py-3 px-4 text-left text-[11px] text-[#003918] font-bold uppercase truncate">{{ $fullName }}</td>
-                        <td class="py-3 px-4 text-left text-[11px] text-gray-600 font-medium">{{ $student->display_status }}</td>
+                        <td class="py-3 px-4 text-left text-[11px] text-[#003918] font-bold truncate">
+                            <span class="uppercase">{{ $student->last_name }},</span>
+                            <span class="text-[#003918]/75 font-medium uppercase"> {{ $coloredPart }}</span>
+                        </td>
+                        <td class="py-3 px-4 text-left text-[11px] text-gray-600">{{ $student->display_status }}</td>
                         <td class="py-3 px-4 text-center text-[11px] text-gray-600">{{ $student->display_grade }}</td>
                         <td class="py-3 px-4 text-left text-[11px] text-gray-600 truncate">{{ $student->display_track }}</td>
                         <td class="py-3 px-4 text-left text-[11px] text-gray-600 truncate">{{ $student->display_cluster }}</td>
@@ -77,7 +93,6 @@
     </div>
 </div>
 
-{{-- KEEP YOUR SCRIPTS AND STYLES BELOW --}}
 <style>
     .custom-scrollbar::-webkit-scrollbar { width: 5px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: #f9fafb; }

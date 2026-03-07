@@ -40,6 +40,8 @@ Route::middleware([CheckAdmin::class])->group(function () {
         Route::get('/accountsettings', [AdminController::class, 'accountsettings'])->name('accountsettings');
         Route::post('/systemsync/perform', [AdminController::class, 'performSync'])->name('sync.perform');
         Route::post('/verification/action', [AdminController::class, 'handleVerificationAction'])->name('verification.action');
+        Route::get('/accessmanagement', [AdminController::class, 'accessmanagement'])->name('accessmanagement');
+        Route::post('/accessmanagement', [AdminController::class, 'store'])->name('accessmanagement.store');
     });
 });
 

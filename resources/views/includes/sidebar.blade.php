@@ -91,6 +91,14 @@
         </nav>
 
         <div class="pt-6 border-t border-green-300">
+            <a href="{{ route('admin.accessmanagement') }}" class="flex items-center gap-10 px-4 py-3 text-[#003918] font-semibold rounded-xl hover:bg-[#00923F]/5 transition-colors group {{ isActive('admin.accessmanagement') }}">
+                <div class="w-6 flex justify-center shrink-0">
+                    <svg class="w-6 h-6 fill-current opacity-80" viewBox="0 0 24 24">
+                        <path d="M19.6 3C18 3 13.1 1 12 1s-6 2-7.6 2c-1.4 0-2.4 1.2-2.4 2.6V12c0 5.6 4.7 9.8 8.6 11.7.9.4 1.9.4 2.8 0 3.9-1.9 8.6-6.1 8.6-11.7V5.6C22 4.2 21 3 19.6 3zm-7.6 16.5c-2.3 0-4.1-1.8-4.1-4.1s1.8-4.1 4.1-4.1s4.1 1.8 4.1 4.1s-1.8 4.1-4.1 4.1zm0-10.2c-1.7 0-3-1.3-3-3s1.3-3 3-3s3 1.3 3 3s-1.3 3-3 3z"/>
+                    </svg>
+                </div>
+                <span>Access Management</span>
+            </a>
             <a href="{{ route('admin.accountsettings') }}" class="flex items-center gap-10 px-4 py-3 text-[#003918] font-semibold rounded-xl hover:bg-[#00923F]/5 transition-colors group {{ isActive('admin.accountsettings') }}">
                 <div class="w-6 flex justify-center shrink-0">
                     <svg class="w-6 h-6 fill-current opacity-80" viewBox="0 0 24 24">

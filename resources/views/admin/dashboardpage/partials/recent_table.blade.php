@@ -31,7 +31,7 @@
                                 {{ $submission->first_name }} 
                                 {{ $submission->middle_name ? substr($submission->middle_name, 0, 1) . '.' : '' }} 
                                 {{ $submission->last_name }} 
-                                {{ $submission->extension_name ?? '' }}
+                                {{ $submission->user->extension_name ?? '' }}
                             </td>
 
                             {{-- Grade Level --}}
