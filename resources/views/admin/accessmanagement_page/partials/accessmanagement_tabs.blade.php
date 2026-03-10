@@ -1,8 +1,11 @@
-<div x-data="{ activeTab: '{{ request('status', 'All') }}' }" class="flex justify-between items-end border-b border-gray-400">
+<div x-data="{ activeTab: '{{ request('role', 'All') }}' }" class="flex justify-between items-end border-b border-gray-400">
     <div class="flex gap-6">
         @foreach(['All', 'Administrator', 'Facilitator'] as $tab)
             <button 
-                @click="activeTab = '{{ $tab }}'; switchTab('{{ $tab }}')"
+                {{-- Redirect using the route name and passing the role --}}
+                @click="window.location.href = '{{ route('admin.accessmanagement', ['role' => $tab]) }}'"
+                
+                {{-- Visual active state logic --}}
                 :class="activeTab === '{{ $tab }}' ? 'text-[#005288] border-[#005288] font-bold' : 'text-gray-500 border-transparent font-medium'"
                 class="pb-3 px-2 transition-all duration-200 text-sm border-b-4 -mb-[1px]">
                 {{ $tab }}

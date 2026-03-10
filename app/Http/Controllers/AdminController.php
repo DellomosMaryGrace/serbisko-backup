@@ -360,9 +360,24 @@ class AdminController extends Controller
     public function requirementhub(){ return view('admin.requirementhub');}
     public function accountsettings(){ return view('admin.accountsettings'); }
 
-    public function accessManagement()
+    public function accessManagement(Request $request)
     {
-        $staff = User::whereIn('role', ['super_admin', 'admin', 'facilitator'])->get();
+        $query = User::query();
+
+        $query->whereIn('role', ['super_admin', 'admin', 'facilitator']);
+
+        if ($request->filled('role') && $request->role !== 'All') {
+            $roleMap = [
+                'Administrator' => 'admin',
+                'Facilitator'   => 'facilitator'
+            ];
+
+            $targetRole = $roleMap[$request->role] ?? strtolower($request->role);
+            $query->where('role', $targetRole);
+        }
+
+        $staff = $query->get();
+
         return view('admin.accessmanagement_page.accessmanagement', compact('staff'));
     }
 
