@@ -57,6 +57,13 @@
         <div class="w-full max-w-xl ml-auto">
             <h2 class="text-4xl font-bold text-blue-900 mb-8">Sign in to get started</h2>
 
+            @if($errors->has('message'))
+                <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-r-xl shadow-sm animate-pulse">
+                    <p class="font-bold text-sm">Access Denied</p>
+                    <p class="text-xs">{{ $errors->first('message') }}</p>
+                </div>
+            @endif
+
             <form action="{{ url('/login') }}" method="POST" class="space-y-5">
                 @csrf
 

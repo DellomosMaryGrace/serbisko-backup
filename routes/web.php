@@ -40,8 +40,9 @@ Route::middleware([CheckAdmin::class])->group(function () {
         Route::get('/accountsettings', [AdminController::class, 'accountsettings'])->name('accountsettings');
         Route::post('/systemsync/perform', [AdminController::class, 'performSync'])->name('sync.perform');
         Route::post('/verification/action', [AdminController::class, 'handleVerificationAction'])->name('verification.action');
-        Route::get('/accessmanagement', [AdminController::class, 'accessmanagement'])->name('accessmanagement');
-        Route::post('/accessmanagement', [AdminController::class, 'store'])->name('accessmanagement.store');
+        Route::get('/accessmanagement', [AdminController::class, 'accessManagement'])->name('accessmanagement');
+        Route::post('/accessmanagement/store', [AdminController::class, 'storeUser'])->name('accessmanagement.store');
+        Route::delete('/users/{id}', [AdminController::class, 'destroy'])->name('destroyUser'); // Resulting name: admin.destroyUser
     });
 });
 

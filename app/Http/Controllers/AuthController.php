@@ -23,7 +23,8 @@ class AuthController extends Controller
         $query = DB::table('users')
             ->where('last_name', $lastName)
             ->where('first_name', $givenName)
-            ->where('birthday', $dob);
+            ->where('birthday', $dob)
+            ->whereNull('deleted_at');
 
         // SAFELY check middle name: If they typed one, search for it. 
         // If they left it blank, look for NULL or empty in the database.
@@ -49,8 +50,8 @@ class AuthController extends Controller
             Session::put('user_name', $user->first_name);
 
             // 4. Redirect based on Role
-            if ($role === 'admin') {
-                return redirect('/dashboard'); // <-- UPDATED TO /dashboard
+            if (in_array($role, ['admin', 'super_admin', 'facilitator'])) {
+                return redirect('/dashboard'); 
             } else {
                 return redirect('/student/grade-selection');
             }

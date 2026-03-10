@@ -10,41 +10,45 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up(): void
-        {
-            Schema::create('users', function (Blueprint $table) {
-                $table->id(); // Internal Unique ID
-                
-                // Name Fields
-                $table->string('first_name')->index(); 
-                $table->string('last_name')->index();
-                $table->string('middle_name')->nullable();
-                
-                // Login Identifiers
-                $table->date('birthday')->index(); 
-                $table->string('password'); // This will store the hashed LRN or Temp ID
-                $table->timestamp('password_changed_at')->nullable(); // for password changing policy
-                
-                // Access Control
-                $table->enum('role', ['admin', 'facilitator', 'student'])->default('student');
-                
-                $table->timestamps(); // created_at and updated_at
-            });
+    {
+        Schema::create('users', function (Blueprint $table) {
+            $table->id(); 
+            
+            // Name Fields
+            $table->string('first_name')->index(); 
+            $table->string('last_name')->index();
+            $table->string('middle_name')->nullable();
+            $table->string('extension_name', 10)->nullable(); 
+            
+            // Login Identifiers
+            $table->date('birthday')->index(); 
+            $table->string('password'); 
+            $table->timestamp('password_changed_at')->nullable();
+            
+            // Updated to varchar(45) as per your change
+            $table->string('role', 45)->default('student'); 
+            
+            // Soft Deletes - REQUIRED for "Revoke Access" logic
+            $table->softDeletes(); 
+            
+            $table->timestamps(); 
+        });
 
-            Schema::create('password_reset_tokens', function (Blueprint $table) {
-                $table->string('email')->primary();
-                $table->string('token');
-                $table->timestamp('created_at')->nullable();
-            });
+        Schema::create('password_reset_tokens', function (Blueprint $table) {
+            $table->string('email')->primary();
+            $table->string('token');
+            $table->timestamp('created_at')->nullable();
+        });
 
-            Schema::create('sessions', function (Blueprint $table) {
-                $table->string('id')->primary();
-                $table->foreignId('user_id')->nullable()->index();
-                $table->string('ip_address', 45)->nullable();
-                $table->text('user_agent')->nullable();
-                $table->longText('payload');
-                $table->integer('last_activity')->index();
-            });
-        }
+        Schema::create('sessions', function (Blueprint $table) {
+            $table->string('id')->primary();
+            $table->foreignId('user_id')->nullable()->index();
+            $table->string('ip_address', 45)->nullable();
+            $table->text('user_agent')->nullable();
+            $table->longText('payload');
+            $table->integer('last_activity')->index();
+        });
+    }
 
     /**
      * Reverse the migrations.

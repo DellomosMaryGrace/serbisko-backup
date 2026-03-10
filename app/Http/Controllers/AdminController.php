@@ -6,9 +6,12 @@ use Google\Client;
 use App\Models\User;
 use Google\Service\Sheets; 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+
 
 class AdminController extends Controller
 {
@@ -31,16 +34,22 @@ class AdminController extends Controller
         };
 
         $totalRegistrations = $applyFilter(DB::table('students')
+            ->join('users', 'students.user_id', '=', 'users.id') 
+            ->whereNull('users.deleted_at') // Add this condition to exclude soft-deleted users
             ->leftJoin('kiosk_enrollments', 'students.lrn', '=', 'kiosk_enrollments.student_lrn')
             ->leftJoin('pre_enrollments', 'students.lrn', '=', 'pre_enrollments.student_lrn'))
             ->count();
 
         $totalSubmissions = $applyFilter(DB::table('students')
+            ->join('users', 'students.user_id', '=', 'users.id')
+            ->whereNull('users.deleted_at')
             ->join('kiosk_enrollments', 'students.lrn', '=', 'kiosk_enrollments.student_lrn')
             ->leftJoin('pre_enrollments', 'students.lrn', '=', 'pre_enrollments.student_lrn'))
             ->count();
 
         $totalEnrolled = $applyFilter(DB::table('students')
+            ->join('users', 'students.user_id', '=', 'users.id')
+            ->whereNull('users.deleted_at')
             ->join('kiosk_enrollments', 'students.lrn', '=', 'kiosk_enrollments.student_lrn')
             ->leftJoin('pre_enrollments', 'students.lrn', '=', 'pre_enrollments.student_lrn')
             ->where('kiosk_enrollments.academic_status', '=', 'Officially Enrolled')) 
@@ -63,6 +72,8 @@ class AdminController extends Controller
             $fullString = $fullMap[$elective] ?? $elective;
 
             $electiveCounts[$elective] = $applyFilter(DB::table('students')
+                ->join('users', 'students.user_id', '=', 'users.id')
+                ->whereNull('users.deleted_at')
                 ->join('pre_enrollments', 'students.lrn', '=', 'pre_enrollments.student_lrn')
                 ->leftJoin('kiosk_enrollments', 'students.lrn', '=', 'kiosk_enrollments.student_lrn')
                 ->where(function($q) use ($elective, $fullString) {
@@ -78,6 +89,7 @@ class AdminController extends Controller
         $recentKioskQuery = DB::table('kiosk_enrollments')
             ->join('students', 'kiosk_enrollments.student_lrn', '=', 'students.lrn')
             ->join('users', 'students.user_id', '=', 'users.id')
+            ->whereNull('users.deleted_at')
             ->select(
                 'users.first_name', 'users.middle_name', 'users.last_name',
                 'users.extension_name', 'kiosk_enrollments.grade_level',
@@ -123,6 +135,7 @@ class AdminController extends Controller
     {
         $query = DB::table('users')
             ->join('students', 'users.id', '=', 'students.user_id')
+            ->whereNull('users.deleted_at')
             ->leftJoin('pre_enrollments', 'students.lrn', '=', 'pre_enrollments.student_lrn')
             ->leftJoin('kiosk_enrollments', 'students.lrn', '=', 'kiosk_enrollments.student_lrn')
             ->where('users.role', 'student')
@@ -232,6 +245,7 @@ class AdminController extends Controller
     {
         $student = DB::table('students')
             ->join('users', 'students.user_id', '=', 'users.id')
+            ->whereNull('users.deleted_at')
             ->leftJoin('pre_enrollments', 'students.lrn', '=', 'pre_enrollments.student_lrn')
             ->leftJoin('kiosk_enrollments', 'students.lrn', '=', 'kiosk_enrollments.student_lrn') 
             ->select(
@@ -297,6 +311,7 @@ class AdminController extends Controller
     { 
         $pendingScans = DB::table('scans')
             ->join('users', 'scans.user_id', '=', 'users.id')
+            ->whereNull('users.deleted_at')
             ->leftJoin('students', 'users.id', '=', 'students.user_id')
             ->leftJoin('kiosk_enrollments as ke', 'students.lrn', '=', 'ke.student_lrn')
             ->leftJoin('pre_enrollments as pe', 'students.lrn', '=', 'pe.student_lrn')
@@ -347,8 +362,58 @@ class AdminController extends Controller
 
     public function accessManagement()
     {
-        $staff = User::whereIn('role', ['admin', 'facilitator'])->get();
+        $staff = User::whereIn('role', ['super_admin', 'admin', 'facilitator'])->get();
         return view('admin.accessmanagement_page.accessmanagement', compact('staff'));
+    }
+
+    public function storeUser(Request $request)
+    {
+        $validated = $request->validate([
+            'first_name'     => 'required|string|max:255', 
+            'last_name'      => 'required|string|max:255',
+            'middle_name'    => 'nullable|string|max:255',
+            'extension_name' => 'nullable|string|max:10',
+            'birthday'       => 'required|date',
+            'role'           => 'required|string|in:admin,administrator,facilitator,super_admin',
+            'password'       => 'required|string|min:8',
+        ]);
+
+        // Map the form value to the exact string stored in the database
+        $roleMap = [
+            'admin' => 'admin',
+            'facilitator'   => 'facilitator',
+            'super_admin'   => 'super_admin'
+        ];
+
+        User::create([
+            'first_name'     => $validated['first_name'],
+            'last_name'      => $validated['last_name'],
+            'middle_name'    => $validated['middle_name'],
+            'extension_name' => $validated['extension_name'],
+            'birthday'       => $validated['birthday'],
+            'role'           => $roleMap[strtolower($validated['role'])] ?? 'facilitator',
+            'password' => Hash::make($request->password),
+        ]);
+
+        return redirect()->route('admin.accessmanagement')->with('success', 'New staff member added!');
+    }
+
+    public function destroy($id)
+    {
+        // 1. Fetch the user FIRST to check if it's the currently authenticated admin
+        $user = User::findOrFail($id);
+
+        // 2. Safely check the ID against the authenticated user
+        if (Auth::id() == $user->id) {
+            return back()->with('error', 'You cannot revoke your own access. Please contact another administrator.');
+        }
+
+        $user = User::findOrFail($id);
+        
+        // 3. Apply Soft Delete
+        $user->delete(); 
+
+        return back()->with('success', 'User access has been revoked successfully.');
     }
 
     public function performSync() {
@@ -387,8 +452,15 @@ class AdminController extends Controller
                 $lrn = trim($row[1]);
 
                 DB::transaction(function () use ($row, $headers, $formattedDob, $lrn, &$newCount, &$updatedCount) {
-                    $existingStudent = DB::table('students')->where('lrn', $lrn)->first();
-                    $userId = $existingStudent ? $existingStudent->user_id : null;
+                    // 1. Check for an existing ACTIVE student only
+                    $existingStudent = DB::table('students')
+                        ->join('users', 'students.user_id', '=', 'users.id')
+                        ->where('students.lrn', $lrn)
+                        ->whereNull('users.deleted_at') // Crucial: Ignore soft-deleted users
+                        ->select('students.*', 'users.id as active_user_id')
+                        ->first();
+
+                    $userId = $existingStudent ? $existingStudent->active_user_id : null;
 
                     // Dynamic JSON Responses (Field 41 onwards)
                     $dynamicResponses = [];
@@ -398,7 +470,7 @@ class AdminController extends Controller
                     }
                     $newJson = json_encode($dynamicResponses);
 
-                    // 1. Define Incoming Student Data for Comparison
+                    // Prepare incoming data for comparison
                     $incomingStudentData = [
                         'sex'                   => $row[9] ?? null,
                         'age'                   => is_numeric($row[8]) ? (int)$row[8] : null,
@@ -436,12 +508,10 @@ class AdminController extends Controller
                         $existingUser = DB::table('users')->where('id', $userId)->first();
                         $existingEnrollment = DB::table('pre_enrollments')->where('student_lrn', $lrn)->first();
 
-                        // Check Identity & JSON
                         $identityChanged = ($existingUser && $existingUser->last_name !== trim($row[2])) ||
-                                           ($existingUser && $existingUser->extension_name !== ($row[5] ?? null));
+                                        ($existingUser && $existingUser->extension_name !== ($row[5] ?? null));
                         $jsonChanged     = ($existingEnrollment && $existingEnrollment->responses !== $newJson);
                         
-                        // NEW: Loop through all fields to check for ANY changes (Address, Parents, etc.)
                         $detailsChanged = false;
                         foreach ($incomingStudentData as $key => $value) {
                             if ($existingStudent->$key != $value) { 
@@ -455,31 +525,32 @@ class AdminController extends Controller
                         }
                     }
 
-                    // 2. Update/Insert User
+                    // 2. Update/Insert User (Only if they aren't soft-deleted elsewhere)
                     if ($userId) {
                         DB::table('users')->where('id', $userId)->update([
-                            'last_name'   => trim($row[2]),
-                            'first_name'  => trim($row[3]),
-                            'middle_name' => $row[4] ?? null,
+                            'last_name'      => trim($row[2]),
+                            'first_name'     => trim($row[3]),
+                            'middle_name'    => $row[4] ?? null,
                             'extension_name' => $row[5] ?? null,
-                            'birthday'    => $formattedDob,
-                            'updated_at'  => $hasChanged ? now() : DB::raw('updated_at'),
+                            'birthday'       => $formattedDob,
+                            'updated_at'     => $hasChanged ? now() : DB::raw('updated_at'),
                         ]);
                     } else {
+                        // This will create a fresh user if the LRN is new OR if the old LRN user was soft-deleted
                         $userId = DB::table('users')->insertGetId([
-                            'last_name'   => trim($row[2]),
-                            'first_name'  => trim($row[3]),
-                            'middle_name' => $row[4] ?? null,
+                            'last_name'      => trim($row[2]),
+                            'first_name'     => trim($row[3]),
+                            'middle_name'    => $row[4] ?? null,
                             'extension_name' => $row[5] ?? null,
-                            'birthday'    => $formattedDob,
-                            'role'        => 'student',
-                            'password'    => bcrypt($lrn),
-                            'created_at'  => now(),
-                            'updated_at'  => now(),
+                            'birthday'       => $formattedDob,
+                            'role'           => 'student',
+                            'password'       => Hash::make($lrn),
+                            'created_at'     => now(),
+                            'updated_at'     => now(),
                         ]);
                     }
 
-                    // 3. Update/Insert Student (Using the unified array)
+                    // 3. Update/Insert Student 
                     DB::table('students')->updateOrInsert(
                         ['lrn' => $lrn],
                         array_merge($incomingStudentData, [

@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('students', function (Blueprint $table) {
             $table->string('lrn')->primary(); // LRN from form
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->string('extension_name')->nullable(); // Jr., III
             $table->enum('sex', ['Male', 'Female']); // Sex field
             $table->integer('age'); // Age field
             $table->string('place_of_birth'); // Place of Birth
