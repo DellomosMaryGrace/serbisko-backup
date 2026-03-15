@@ -70,11 +70,15 @@
                                     <form action="{{ route('admin.restoreUser', $user->id) }}" method="POST" class="inline">
                                         @csrf
                                         @method('PATCH')
-                                        <button type="submit" class="flex items-center gap-2 text-[10px] font-bold text-blue-600 uppercase hover:underline">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                                <polyline points="23 4 23 10 17 10"></polyline>
-                                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-                                            </svg>
+                                        <button type="button" 
+                                            @click="$dispatch('open-confirm-modal', { 
+                                                url: '{{ route('admin.restoreUser', $user->id) }}',
+                                                title: 'Restore Access?',
+                                                message: 'This will allow the user to log back into the system immediately.',
+                                                buttonText: 'RESTORE',
+                                                buttonClass: 'bg-[#00923F] hover:bg-[#003918]'
+                                            })"
+                                            class="flex items-center gap-2 text-[10px] font-bold text-blue-600 uppercase hover:underline">
                                             Restore Access
                                         </button>
                                     </form>
@@ -114,16 +118,17 @@
                                     </div>
 
                                     @if($currentRole === 'super_admin' || ($currentRole === 'admin' && $user->role === 'facilitator'))
-                                        <form action="{{ route('admin.destroyUser', $user->id) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure?')">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="flex items-center gap-2 text-[10px] font-bold text-red-600 uppercase hover:underline">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" y1="8" x2="23" y2="14"/><line x1="23" y1="8" x2="17" y2="14"/>
-                                                </svg>
-                                                Revoke Access
-                                            </button>
-                                        </form>
+                                        <button type="button" 
+                                            @click="$dispatch('open-confirm-modal', { 
+                                                url: '{{ route('admin.destroyUser', $user->id) }}',
+                                                title: 'Are you sure?',
+                                                message: 'This action will revoke this user\'s access.',
+                                                buttonText: 'REVOKE',
+                                                buttonClass: 'bg-red-600 hover:bg-red-700'
+                                            })"
+                                            class="flex items-center gap-2 text-[10px] font-bold text-red-600 uppercase hover:underline">
+                                            Revoke Access
+                                        </button>
                                     @endif
                                 @endif
 
@@ -138,6 +143,45 @@
         </tbody>
     </table>
 </div>
+
+<div x-data="{ open: false, postUrl: '', title: '', message: '', buttonText: '', buttonClass: '' }" 
+     @open-confirm-modal.window="
+        open = true; 
+        postUrl = $event.detail.url; 
+        title = $event.detail.title; 
+        message = $event.detail.message; 
+        buttonText = $event.detail.buttonText;
+        buttonClass = $event.detail.buttonClass;
+     "
+     x-show="open" 
+     x-cloak
+     class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    
+    <div @click="open = false" class="fixed inset-0 bg-black/60 backdrop-blur-sm"></div>
+
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 text-center">
+        <h3 class="text-xl font-black text-[#003918] uppercase tracking-tight mb-2" x-text="title"></h3>
+        <p class="text-gray-500 text-sm mb-8" x-text="message"></p>
+
+        <div class="flex gap-4">
+            <button @click="open = false" class="flex-1 px-6 py-3 bg-[#E8EEF4] text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition-colors">CANCEL</button>
+            <form :action="postUrl" method="POST" class="flex-1">
+                @csrf
+                <template x-if="buttonText === 'REVOKE'"><input type="hidden" name="_method" value="DELETE"></template>
+                <template x-if="buttonText === 'RESTORE'"><input type="hidden" name="_method" value="PATCH"></template>
+                
+                <button type="submit" 
+                        :class="buttonClass"
+                        class="w-full px-6 py-3 text-white font-bold rounded-xl shadow-md transition-all" 
+                        x-text="buttonText"></button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    [x-cloak] { display: none !important; }
+</style>
 
 <script>
 function toggleDropdown(event, id) {

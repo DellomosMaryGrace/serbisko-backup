@@ -1,3 +1,85 @@
+{{-- SYSTEM MESSAGES --}}
+<div 
+    x-data="{ 
+        show: false, 
+        message: '', 
+        type: 'success',
+        init() {
+            @if(session('success'))
+                this.showToast('{{ session('success') }}', 'success');
+            @elseif(session('info'))
+                this.showToast('{{ session('info') }}', 'info');
+            @elseif($errors->any())
+                this.showToast('{!! implode('<br>', $errors->all()) !!}', 'error');
+            @endif
+        },
+        showToast(msg, type) {
+            this.message = msg;
+            this.type = type;
+            this.show = true;
+            setTimeout(() => { this.show = false }, 5000);
+        }
+    }"
+    x-show="show"
+    x-transition:enter="transition ease-out duration-300"
+    x-transition:enter-start="translate-y-[-20px] opacity-0"
+    x-transition:enter-end="translate-y-0 opacity-100"
+    x-transition:leave="transition ease-in duration-200"
+    x-transition:leave-start="opacity-100"
+    x-transition:leave-end="opacity-0"
+    x-cloak
+    class="fixed top-6 right-6 z-[9999] max-w-sm w-full shadow-2xl rounded-xl overflow-hidden border pointer-events-auto"
+    :class="{
+        'bg-[#00923F] border-[#003918]': type === 'success',
+        'bg-[#3b82f6] border-[#005288]': type === 'info',
+        'bg-red-600 border-red-800': type === 'error'
+    }"
+>
+    <div class="p-4 flex items-center gap-4">
+        {{-- Icon --}}
+        <div class="flex-shrink-0">
+            <template x-if="type === 'success'">
+                <div class="bg-white/20 rounded-full p-1">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                </div>
+            </template>
+            <template x-if="type === 'info'">
+                <div class="bg-white/20 rounded-full p-1">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path d="M12 16v-4m0-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z"/></svg>
+                </div>
+            </template>
+            <template x-if="type === 'error'">
+                <div class="bg-white/20 rounded-full p-1">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </div>
+            </template>
+        </div>
+
+        {{-- Message --}}
+        <div class="flex-1">
+            <div class="text-white text-[14px] font-bold leading-tight tracking-wide" x-html="message"></div>
+        </div>
+
+        {{-- Close --}}
+        <button @click="show = false" class="text-white/50 hover:text-white transition-colors duration-200">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+    </div>
+    
+    {{-- Progress Bar --}}
+    <div class="h-1 bg-black/10 w-full overflow-hidden">
+        <div 
+            x-show="show"
+            x-transition:enter="transition-all ease-linear duration-[5000ms]"
+            x-transition:enter-start="w-full"
+            x-transition:enter-end="w-0"
+            class="h-full bg-white/30"
+        ></div>
+    </div>
+</div>
+
+
+{{-- REGISTRATION FORM --}}
 <div x-show="showRegistration" 
      class="fixed inset-0 z-50 flex items-center justify-center p-4"
      x-transition:enter="transition ease-out duration-300"

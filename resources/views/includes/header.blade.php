@@ -1,4 +1,7 @@
 <header class="flex justify-between items-center px-16 py-8 bg-transparent w-full">
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
     <div class="page-title">
         <h1 class="text-[#00923F] text-5xl font-[800] tracking-tight">
             @yield('page_title', 'Dashboard') 
@@ -40,6 +43,7 @@
             </button>
 
             <div x-show="open" 
+                x-cloak
                 x-transition:enter="transition ease-out duration-100"
                 x-transition:enter-start="transform opacity-0 scale-95"
                 x-transition:enter-end="transform opacity-100 scale-100"
