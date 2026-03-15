@@ -6,26 +6,41 @@
         </h2>
         
         <div class="space-y-5">
+            {{-- Total Registrations (Always 100%) --}}
             <div class="flex items-center gap-3">
-                <span class="w-32 text-gray-500 font-medium text-[12px] text-right leading-tight">Total Registrations</span>
+                <span class="w-32 text-gray-500 font-medium text-[12px] text-right">Total Registrations</span>
                 <div class="flex-1 flex items-center gap-3">
-                    <div class="bg-[#048F81] h-7 rounded-md" style="width: 100%"></div>
+                    <div class="bg-[#048F81] h-7 rounded-md transition-all duration-1000 ease-out" 
+                        x-data="{ width: 0 }" 
+                        x-init="setTimeout(() => width = 100, 100)" 
+                        :style="`width: ${width}%`"
+                        style="width: 0%"></div>
                     <span class="text-gray-500 font-bold shrink-0 text-[12px]">{{ number_format($totalRegistrations) }}</span>
                 </div>
             </div>
 
+            {{-- Document Verified --}}
             <div class="flex items-center gap-4">
-                <span class="w-32 text-gray-500 font-medium text-[12px] text-right leading-tight">Document Verified</span>
+                <span class="w-32 text-gray-500 font-medium text-[12px] text-right">Document Verified</span>
                 <div class="flex-1 flex items-center gap-3">
-                    <div class="bg-[#00923F] h-7 rounded-md" style="width: {{ $percVerified }}%"></div>
+                    <div class="bg-[#00923F] h-7 rounded-md transition-all duration-1000 ease-out" 
+                        x-data="{ width: 0 }" 
+                        x-init="setTimeout(() => width = {{ $percVerified }}, 100)" 
+                        :style="`width: ${width}%`"
+                        style="width: 0%"></div>
                     <span class="text-[#00923F] font-bold shrink-0 text-[12px]">{{ number_format($totalSubmissions) }}</span>
                 </div>
             </div>
 
+            {{-- Officially Enrolled --}}
             <div class="flex items-center gap-4">
-                <span class="w-32 text-gray-500 font-medium text-[12px] text-right leading-tight">Officially Enrolled</span>
+                <span class="w-32 text-gray-500 font-medium text-[12px] text-right">Officially Enrolled</span>
                 <div class="flex-1 flex items-center gap-3">
-                    <div class="bg-[#00568d] h-7 rounded-md" style="width: {{ $percEnrolled }}%"></div>
+                    <div class="bg-[#00568d] h-7 rounded-md transition-all duration-1000 ease-out" 
+                        x-data="{ width: 0 }" 
+                        x-init="setTimeout(() => width = {{ $percEnrolled }}, 100)" 
+                        :style="`width: ${width}%`"
+                        style="width: 0%"></div>
                     <span class="text-gray-500 font-bold shrink-0 text-[12px]">{{ number_format($totalEnrolled) }}</span>
                 </div>
             </div>
@@ -56,59 +71,58 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        const ctx = document.getElementById('electiveChart').getContext('2d');
-        
-        // Feed data from PHP
-        const counts = [
-            {{ $electiveCounts['STEM'] ?? 0 }}, 
-            {{ $electiveCounts['ASSH'] ?? 0 }}, 
-            {{ $electiveCounts['BE'] ?? 0 }}, 
-            {{ $electiveCounts['TechPro'] ?? 0 }}
-        ];
+    (function() {
+        function renderElectiveChart() {
+            const canvas = document.getElementById('electiveChart');
+            if (!canvas) return;
 
-        const total = counts.reduce((a, b) => a + b, 0);
-
-        // If no data, show a gray ring instead of an empty canvas
-        const chartData = total > 0 ? counts : [1];
-        const chartColors = total > 0 
-            ? ['#00568d', '#00897b', '#1a8a44', '#facc15'] 
-            : ['#e5e7eb']; // Light gray for empty state
-
-        new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: ['STEM', 'ASSH', 'BE', 'TechPro'],
-                datasets: [{
-                    data: chartData,
-                    backgroundColor: chartColors,
-                    borderWidth: 2,
-                    borderColor: '#ffffff',
-                    hoverOffset: 10
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '65%', // Thinner ring looks more modern
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        enabled: total > 0,
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.label || '';
-                                let value = context.raw;
-                                let percentage = ((value / total) * 100).toFixed(1);
-                                return ` ${label}: ${value} (${percentage}%)`;
-                            }
-                        }
-                    }
-                },
-                layout: {
-                    padding: 10
-                }
+            // 1. Clear existing chart instance to prevent "Canvas in use" error
+            let existingChart = Chart.getChart(canvas);
+            if (existingChart) {
+                existingChart.destroy();
             }
-        });
-    });
+
+            const ctx = canvas.getContext('2d');
+            const counts = [
+                {{ $electiveCounts['STEM'] ?? 0 }}, 
+                {{ $electiveCounts['ASSH'] ?? 0 }}, 
+                {{ $electiveCounts['BE'] ?? 0 }}, 
+                {{ $electiveCounts['TechPro'] ?? 0 }}
+            ];
+
+            const total = counts.reduce((a, b) => a + b, 0);
+            const chartData = total > 0 ? counts : [1];
+            const chartColors = total > 0 
+                ? ['#00568d', '#00897b', '#1a8a44', '#facc15'] 
+                : ['#e5e7eb'];
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['STEM', 'ASSH', 'BE', 'TechPro'],
+                    datasets: [{
+                        data: chartData,
+                        backgroundColor: chartColors,
+                        borderWidth: 2,
+                        borderColor: '#ffffff',
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: total > 0 }
+                    }
+                }
+            });
+        }
+
+        // Run immediately on page load
+        renderElectiveChart();
+
+        // Listen for the custom event we dispatch in the main dashboard blade
+        document.addEventListener("DOMContentLoaded", renderElectiveChart);
+    })();
 </script>

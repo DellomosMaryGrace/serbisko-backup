@@ -10,18 +10,32 @@
         </div>
         <div>
             <div class="flex items-center gap-3">
-                <form action="{{ route('admin.sync.perform') }}" method="POST" x-data="{ syncing: false }" class="m-0">
-                    @csrf
-                    <button type="submit" 
-                            @click="syncing = true"
-                            :class="syncing ? 'opacity-75 cursor-not-allowed' : ''"
-                            class="flex items-center gap-2 py-1 text-[#005288] font-bold text-md hover:text-[#005288]/50 transition-colors inline-block mt-auto">
-                        <svg class="w-4 h-4" :class="syncing ? 'animate-spin' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                        </svg>
-                        <span x-text="syncing ? 'Syncing...' : 'Sync Data'"></span>
-                    </button>
-                </form>
+                {{-- Replace the Form with this Button --}}
+                <button type="button" 
+                        x-data="{ syncing: false }" 
+                        @click="
+                            if(syncing) return;
+                            syncing = true;
+                            fetch('{{ route('admin.sync.perform') }}', { 
+                                method: 'POST', 
+                                headers: { 
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                } 
+                            })
+                            .then(() => {
+                                $dispatch('refresh-dashboard'); // Tells the main blade to update numbers
+                                syncing = false;
+                            })
+                            .catch(() => syncing = false)
+                        "
+                        :class="syncing ? 'opacity-75 cursor-not-allowed' : ''"
+                        class="flex items-center gap-2 py-1 text-[#005288] font-bold text-md hover:text-[#005288]/50 transition-colors">
+                    <svg class="w-4 h-4" :class="syncing ? 'animate-spin' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span x-text="syncing ? 'Syncing...' : 'Sync Data'"></span>
+                </button>
             </div>
             <div class="text-gray-400 text-[9px] font-medium">Last Synced {{ $lastSyncTime }}</div>
         </div>

@@ -141,11 +141,19 @@ class AdminController extends Controller
             #facc15 {$stop3}% 100%
         )";
 
-        return view('admin.dashboardpage.dashboard', compact(
-            'totalRegistrations', 'totalSubmissions', 'totalEnrolled',
-            'percVerified', 'percEnrolled', 'electiveCounts',
-            'donutGradient', 'lastSyncTime', 'recentKioskSubmissions'
-        ));
+        $data = compact(
+                    'totalRegistrations', 'totalSubmissions', 'totalEnrolled',
+                    'percVerified', 'percEnrolled', 'electiveCounts',
+                    'donutGradient', 'lastSyncTime', 'recentKioskSubmissions'
+                );
+
+                // Check if the request is an AJAX call (from your new buttons)
+                if ($request->ajax()) {
+                    return view('admin.dashboardpage.partials._dashboard_wrapper', $data)->render();
+                }
+
+                // Standard load
+                return view('admin.dashboardpage.dashboard', $data);
     }
 
     // 2. STUDENT LIST LOGIC
