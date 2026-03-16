@@ -93,7 +93,7 @@
                                 .then(rejData => {
                                     if (rejData.rejected) {
                                         console.log("PAPER_REJECTED recorded in background.");
-                                        // We don't stop the interval, just in case there are multiple signals
+                                        clearInterval(rejectInterval); // Stop once recorded
                                     }
                                 });
                         }, 2000);

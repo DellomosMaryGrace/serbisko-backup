@@ -153,20 +153,23 @@ def read_sensor():
 def check_rejection():
     """Specifically checks for PAPER_REJECTED signal from Arduino."""
     if not arduino:
-        # Simulation: To test the rejection flow, you could return rejected: true here temporarily
         return jsonify({'rejected': False})
         
-    # Read any buffered lines
-    if arduino.in_waiting > 0:
+    found = False
+    # Read ALL available lines in the buffer to make sure we don't miss it
+    while arduino.in_waiting > 0:
         try:
             line = arduino.readline().decode('utf-8').strip()
-            print(f"📡 Serial Read: {line}")
+            print(f"📡 Serial Read (Rejection Check): {line}")
             if 'PAPER_REJECTED' in line:
-                return jsonify({'rejected': True})
+                found = True
+                # Don't break immediately, clear the rest of the buffer 
+                # to avoid lingering signals for the next doc
         except Exception as e:
-            print(f"⚠️ Error reading serial for rejection: {e}")
+            print(f"⚠️ Error reading serial: {e}")
+            break
             
-    return jsonify({'rejected': False})
+    return jsonify({'rejected': found})
 
 # ==========================================
 # STATUS PING

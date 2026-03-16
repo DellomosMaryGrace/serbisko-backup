@@ -314,15 +314,30 @@ class ScanController extends Controller
                 $enrollment = DB::table('kiosk_enrollments')->where('id', $userId)->first();
                 $rejectedPapers = json_decode($enrollment->rejected_papers ?? '[]', true);
                 
-                $rejectedPapers[] = [
-                    'document_type' => $docType,
-                    'rejected_at' => now()->toDateTimeString(),
-                    'prefix' => $this->getPrefix($docType)
-                ];
+                // --- DUPLICATE CHECK ---
+                // Only add if not already recorded within the last 15 seconds for this doc type
+                $alreadyExists = false;
+                foreach ($rejectedPapers as $rej) {
+                    if ($rej['document_type'] === $docType) {
+                        $diff = abs(now()->diffInSeconds(\Carbon\Carbon::parse($rej['rejected_at'])));
+                        if ($diff < 15) {
+                            $alreadyExists = true;
+                            break;
+                        }
+                    }
+                }
 
-                DB::table('kiosk_enrollments')->where('id', $userId)->update([
-                    'rejected_papers' => json_encode($rejectedPapers)
-                ]);
+                if (!$alreadyExists) {
+                    $rejectedPapers[] = [
+                        'document_type' => $docType,
+                        'rejected_at' => now()->toDateTimeString(),
+                        'prefix' => $this->getPrefix($docType)
+                    ];
+
+                    DB::table('kiosk_enrollments')->where('id', $userId)->update([
+                        'rejected_papers' => json_encode($rejectedPapers)
+                    ]);
+                }
 
                 return response()->json(['rejected' => true]);
             }
