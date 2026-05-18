@@ -142,9 +142,17 @@ def ocr():
                 'strong': ['als certificate', 'als accreditation', 'elementary completer', 'secondary completer'],
                 'block': ['sf9', 'reportcard', 'report card', 'affidavit', 'live birth', 'birth certificate', 'certificate of live birth','enrollment form','enrollment']
             },
+            'good_moral': {
+                'strong': ['good moral', 'character', 'conduct'],
+                'block': ['psa', 'nso', 'birth']
+            },
             'affidavit': {
                 'strong': ['affidavit', 'undertaking', 'sworn', 'notarial', 'notary public', 'annex 3', 'deped order'],
                 'block': ['sf9', 'reportcard', 'report card', 'live birth', 'birth certificate', 'certificate of live birth','enrollment form','enrollment']
+            },
+            'form_137': {
+                'strong': ['sf10', 'school form 10', 'form 137', 'permanent record'],
+                'block': ['psa', 'nso', 'birth']
             }
         }
         config = doc_config.get(doc_type, {'strong': [], 'block': []})
@@ -198,10 +206,10 @@ def ocr():
                      (fuzzy_match(last_name, text, 0.45) and fuzzy_match(first_name, text, 0.2)):
                     name_verified = True
 
-                if name_verified:
-                    log(f"SUCCESS: Name verified early in Pass {p_idx+1}, Rot {rot}")
+                if name_verified and found_doc:
+                    log(f"SUCCESS: Both Name and Document Type verified early in Pass {p_idx+1}, Rot {rot}")
                     break
-            if name_verified: break
+            if name_verified and found_doc: break
         
         if not found_doc:
             return jsonify({'success': False, 'error': f"Document mismatch. Please scan the correct {doc_type.replace('_', ' ')}."})
