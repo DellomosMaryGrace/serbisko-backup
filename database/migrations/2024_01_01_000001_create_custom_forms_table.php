@@ -24,7 +24,7 @@ return new class extends Migration
             // JSON array of question objects.
             // Each question's `id` == `field_id` == the sync.js raw.* field name
             // e.g. "lrn", "first_name", "last_name", "birthday"
-            $table->json('schema')->default('[]');
+            $table->json('schema');
 
             // Firestore document ID in `form_schemas` collection.
             // Set after first successful push from FormBuilderController.

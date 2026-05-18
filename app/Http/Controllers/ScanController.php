@@ -24,8 +24,6 @@ class ScanController extends Controller
         if (str_contains($lowerDoc, 'enrollment') || str_contains($lowerDoc, 'form')) return 'enroll_form';
         if (str_contains($lowerDoc, 'als') || str_contains($lowerDoc, 'alternative')) return 'als_cert';
         if (str_contains($lowerDoc, 'affidavit') || str_contains($lowerDoc, 'sworn') || str_contains($lowerDoc, 'undertaking')) return 'affidavit';
-        if (str_contains($lowerDoc, 'moral')) return 'good_moral';
-        if (str_contains($lowerDoc, '137') || str_contains($lowerDoc, 'sf10')) return 'sf10';
         return 'sf9';
     }
 
@@ -167,7 +165,7 @@ class ScanController extends Controller
                     ]
                 );
                 DB::table('scans')->where('id', $scanId)->update(['status' => 'verified', 'remarks' => 'Stored', 'updated_at' => now()]);
-                return response()->json(['status' => 'success', 'redirect' => '/student/verifying']);
+                return response()->json(['status' => 'success', 'redirect' => url('/student/verifying')]);
             }
 
             $student = Student::find($studentId);
@@ -201,8 +199,6 @@ class ScanController extends Controller
             elseif (str_contains($lowerDoc, 'enrollment') || str_contains($lowerDoc, 'form')) $pythonDocType = 'enroll_form';
             elseif (str_contains($lowerDoc, 'als') || str_contains($lowerDoc, 'alternative')) $pythonDocType = 'als_certificate';
             elseif (str_contains($lowerDoc, 'affidavit') || str_contains($lowerDoc, 'sworn') || str_contains($lowerDoc, 'undertaking')) $pythonDocType = 'affidavit';
-            elseif (str_contains($lowerDoc, 'moral')) $pythonDocType = 'good_moral';
-            elseif (str_contains($lowerDoc, '137') || str_contains($lowerDoc, 'sf10')) $pythonDocType = 'form_137';
             else $pythonDocType = 'generic_name_check'; 
 
             $user = DB::table('users')->where('id', $userId)->first();
@@ -222,13 +218,13 @@ class ScanController extends Controller
 
                 if ($ocrResponse->failed()) {
                     $handleFailure('OCR Server Error');
-                    return response()->json(['status' => 'success', 'redirect' => '/student/verifying']);
+                    return response()->json(['status' => 'success', 'redirect' => url('/student/verifying')]);
                 }
 
                 $ocrResult = $ocrResponse->json();
                 if (isset($ocrResult['success']) && $ocrResult['success'] === false) {
                     $handleFailure($ocrResult['error'] ?? 'Document Rejected.');
-                    return response()->json(['status' => 'success', 'redirect' => '/student/verifying']);
+                    return response()->json(['status' => 'success', 'redirect' => url('/student/verifying')]);
                 }
 
                 if (isset($ocrResult['success']) && $ocrResult['success'] === true) {
@@ -245,7 +241,7 @@ class ScanController extends Controller
                     if ($isReportCard) {
                         if (!$lrn) {
                             $handleFailure("Could not find your record in the database based on the scanned LRN.");
-                            return response()->json(['status' => 'success', 'redirect' => '/student/verifying']);
+                            return response()->json(['status' => 'success', 'redirect' => url('/student/verifying')]);
                         }
 
                         DB::table('kiosk_enrollments')->where('student_id', $studentId)->update([
@@ -276,7 +272,7 @@ class ScanController extends Controller
                 Log::error("OCR Exception", ['error' => $e->getMessage()]);
                 $handleFailure('AI Engine Offline');
             }
-            return response()->json(['status' => 'success', 'redirect' => '/student/verifying']);
+            return response()->json(['status' => 'success', 'redirect' => url('/student/verifying')]);
         } catch (\Exception $e) {
             Log::error("FATAL ERROR in processDocument", ['msg' => $e->getMessage()]);
             return response()->json(['status' => 'error', 'message' => 'System Error.']);
@@ -376,7 +372,7 @@ class ScanController extends Controller
         $enrollment = DB::table('kiosk_enrollments')->where('student_id', $studentId)->first();
         if ($currentDoc && (str_contains(strtolower($currentDoc), 'sf9') && !str_contains(strtolower($currentDoc), 'back'))) {
              if ($enrollment && $enrollment->sf9_status === 'verified' && ($enrollment->sf9_back_status !== 'verified' && $enrollment->sf9_back_status !== 'manual_verification')) {
-                 return '/student/capture?doc=' . urlencode('Report Card (SF9 Back)');
+                 return url('/student/capture?doc=' . urlencode('Report Card (SF9 Back)'));
              }
         }
         if (!empty($selectedDocs)) {
@@ -386,7 +382,7 @@ class ScanController extends Controller
                     if (str_contains(strtolower($doc), 'sf9') && !str_contains(strtolower($doc), 'back')) { $currentIndex = $idx; break; }
                 }
             }
-            if ($currentIndex !== false && isset($selectedDocs[$currentIndex + 1])) return '/student/capture?doc=' . urlencode($selectedDocs[$currentIndex + 1]);
+            if ($currentIndex !== false && isset($selectedDocs[$currentIndex + 1])) return url('/student/capture?doc=' . urlencode($selectedDocs[$currentIndex + 1]));
         }
         if ($enrollment) {
             $enrollController = new \App\Http\Controllers\EnrollmentController();
@@ -398,8 +394,8 @@ class ScanController extends Controller
                     if (($status !== 'verified' && $status !== 'manual_verification') || ($enrollment->sf9_back_status !== 'verified' && $enrollment->sf9_back_status !== 'manual_verification')) { $allVerified = false; break; }
                 } elseif ($status !== 'verified' && $status !== 'manual_verification') { $allVerified = false; break; }
             }
-            if ($allVerified) return '/student/thankyou';
+            if ($allVerified) return url('/student/thankyou');
         }
-        return '/student/checklist';
+        return url('/student/checklist');
     }
 }

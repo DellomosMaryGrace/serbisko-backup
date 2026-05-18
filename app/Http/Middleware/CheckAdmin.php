@@ -42,7 +42,7 @@ class CheckAdmin
             // STRICT: Only Staff can access non-student routes (Dashboard, etc.)
             if (!in_array($userRole, ['admin', 'super_admin', 'facilitator'])) {
                 // If a student tries to go to /dashboard, send them back to the kiosk
-                return redirect('/student/grade-selection')->withErrors(['message' => 'Access Denied.']);
+                return redirect(url('/student/grade-selection'))->withErrors(['message' => 'Access Denied.']);
             }
 
             // Role-based Restrictions

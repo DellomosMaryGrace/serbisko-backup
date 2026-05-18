@@ -58,7 +58,7 @@
         <h2 class="text-3xl font-bold text-red-700 mb-2">Scanning Incomplete</h2>
         <p id="attempt-info" class="text-blue-900 font-bold text-sm mb-4"></p>
         <p id="error-message" class="text-gray-600 mb-8 font-medium">Please reposition the document.</p>
-        <button onclick="window.location.href='/student/capture'" class="bg-blue-900 text-white font-bold py-3 px-8 rounded-full shadow-md hover:bg-blue-800 w-full">TRY AGAIN</button>
+        <button onclick="window.location.href='{{ url('/student/checklist') }}'" class="bg-blue-900 text-white font-bold py-3 px-8 rounded-full shadow-md hover:bg-blue-800 w-full">TRY AGAIN</button>
     </div>
 
     <div id="halted-card" class="bg-white p-10 rounded-3xl shadow-2xl text-center max-w-lg w-full hidden absolute transform transition-all duration-500 scale-95 opacity-0 border-4 border-red-600">
@@ -78,7 +78,7 @@
         let sortingActive = false;
 
         function checkStatus() {
-            fetch('/student/check-scan-status')
+            fetch('{{ url('/student/check-scan-status') }}')
                 .then(response => response.json())
                 .then(data => {
                     // Success conditions (AI or Manual Admin)
@@ -171,7 +171,7 @@
         function checkHardwareRejection() {
             // We still poll this so the Laravel controller can record the rejection event in the database
             // for the Admin to see, but we NO LONGER stop the flow or logout.
-            fetch('/student/check-rejection')
+            fetch('{{ url('/student/check-rejection') }}')
                 .then(res => res.json())
                 .then(data => {
                     if (data.rejected) {

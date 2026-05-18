@@ -11,7 +11,10 @@ app = Flask(__name__)
 CORS(app)
 
 def log(msg):
-    print(f"🟢 [OCR-LOG] {msg}", flush=True)
+    try:
+        print(f"[OCR-LOG] {msg}", flush=True)
+    except:
+        pass
 
 log("OCR ENGINE v9.16 FUZZY-DOC HYBRID STARTING...")
 
@@ -124,42 +127,27 @@ def ocr():
         # v9.18: Calibrated Document Recognition Configuration (with enhanced Affidavit detection)
         doc_config = {
             'report_card': {
-                'strong': ['sf9', 'schoolform9', 'reportcard', 'form9', 'learner progress', 'progress report', 'periodic rating', 'learning area', 'core values', 'final rating', 'remarks'], 
-                'weak': ['quarter', 'subject', 'narrative report', 'attendance', 'teacher', 'principal', 'adviser'],
-                'block': ['affidavit', 'marriage', 'death']
+                'strong': ['sf9', 'schoolform9', 'reportcard', 'form9', 'report card'],
+                'block': ['affidavit', 'live birth', 'birth certificate', 'basic education enrollment', 'certificate of live birth', 'als certificate','enrollment form']
             },
             'birth_certificate': {
-                'strong': ['certificate of live birth', 'remarks annotation', 'statistical office', 'national statistics'], 
-                'weak': ['psa', 'nso', 'birth', 'live birth', 'live', 'born', 'child', 'republic', 'philippines', 'statistics', 'authority', 'census', 'civil', 'register', 'registry', 'civil registrar'],
-                'block': ['enrollment', 'learner progress', 'moral']
+                'strong': ['certificate of live birth', 'live birth', 'statistics', 'civil registrar', 'best possible image', 'national statistician'], 
+                'block': ['sf9', 'reportcard', 'report card', 'affidavit', 'live birth', 'birth certificate', 'basic education enrollment', 'certificate of live birth', 'als certificate','enrollment form','enrollment']
             },
             'enroll_form': {
-                'strong': ['enrollment', 'basic education', 'learner information', 'be lfd'],
-                'weak': ['registration', 'form', 'student', 'school', 'year', 'parent', 'signature', 'date', 'semester', 'grade', 'guardian', 'contact number', 'sex', 'age', 'birthday', 'psa', 'nso', 'birth'],
-                'block': ['live birth', 'born', 'statistics', 'census', 'rating', 'periodic rating', 'core values', 'learning area']
+                'strong': ['enrollment', 'basic education', 'enrollment form', 'registration form'],
+                'block': ['sf9', 'reportcard', 'report card', 'affidavit', 'live birth', 'birth certificate', 'certificate of live birth', 'als certificate']
             },
             'als_certificate': {
-                'strong': ['als equivalency', 'als accreditation', 'elementary completer', 'secondary completer'],
-                'weak': ['completion', 'passer', 'rating', 'deped', 'department of education'],
-                'block': ['psa', 'nso', 'birth', 'marriage', 'death']
-            },
-            'good_moral': {
-                'strong': ['good moral', 'character', 'conduct'],
-                'weak': ['recommendation', 'student', 'school', 'principal', 'office', 'clearance'],
-                'block': ['psa', 'nso', 'birth']
+                'strong': ['als certificate', 'als accreditation', 'elementary completer', 'secondary completer'],
+                'block': ['sf9', 'reportcard', 'report card', 'affidavit', 'live birth', 'birth certificate', 'certificate of live birth','enrollment form','enrollment']
             },
             'affidavit': {
                 'strong': ['affidavit', 'undertaking', 'sworn', 'notarial', 'notary public', 'annex 3', 'deped order'],
-                'weak': ['republic', 'philippines', 'legal', 'witness', 'subscribe', 'oath', 'provisions', 'compliance', 'requirements', 'submission', 'documents', 'missing', 'parent', 'guardian', 'parentlguardian', 'iabon', 'habon'],
-                'block': []
-            },
-            'form_137': {
-                'strong': ['sf10', 'school form 10', 'form 137', 'permanent record'],
-                'weak': ['transcript', 'grades', 'secondary', 'student', 'record', 'school'],
-                'block': ['psa', 'nso', 'birth']
+                'block': ['sf9', 'reportcard', 'report card', 'live birth', 'birth certificate', 'certificate of live birth','enrollment form','enrollment']
             }
         }
-        config = doc_config.get(doc_type, {'strong': [], 'weak': [], 'block': []})
+        config = doc_config.get(doc_type, {'strong': [], 'block': []})
         
         # Enhanced allowlist to prevent word merging
         ocr_allowlist = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,:;()/- '
@@ -192,13 +180,12 @@ def ocr():
                                 log(f"DETECTED OTHER DOC TYPE: {other_type} via {o_s_list}. Rejecting!")
                                 return jsonify({'success': False, 'error': f"Document mismatch. This looks like a {other_type.replace('_', ' ').upper()} but we need a {doc_type.replace('_', ' ').upper()}."})
 
-                # v9.13: Fuzzy Keyword Matching with Detailed Logging (threshold lowered slightly for better recovery)
+                # v9.19: Fuzzy Keyword Matching (Strong only)
                 s_m, s_list = fuzzy_keyword_match(config['strong'], clean_blob, threshold=0.70)
-                w_m, w_list = fuzzy_keyword_match(config['weak'], clean_blob, threshold=0.70)
-                log(f'Doc Analysis: Strong={s_m} {s_list}, Weak={w_m} {w_list}')
+                log(f'Doc Analysis: Strong={s_m} {s_list}')
                 
-                # v9.16: Stricter acceptance (Need 1 Strong OR at least 2 Weak matches)
-                if (s_m >= 1) or (w_m >= 2) or (not config['strong'] and not config['weak']):
+                # v9.19: Stricter acceptance (Need 1 Strong match)
+                if (s_m >= 1) or (not config['strong']):
                     found_doc = True
                     if len(text) > len(best_text): best_text = text
                     all_lrn_candidates.extend(extract_candidates(text))

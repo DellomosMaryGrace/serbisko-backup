@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 require('dotenv').config();
 
 const admin          = require('firebase-admin');
@@ -18,15 +18,15 @@ const {
 // Initialize Firestore
 admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 const db = admin.firestore();
-console.log('🔥 [FIRESTORE] Connected and listening for changes...');
+console.log('ðŸ”¥ [FIRESTORE] Connected and listening for changes...');
 
 // Initialize MySQL Pool
 const pool = mysql.createPool({
-  host:             process.env.MYSQL_HOST     || '127.0.0.1',
-  port:    parseInt(process.env.MYSQL_PORT     || '3307'),
-  user:             process.env.MYSQL_USER     || 'root',
-  password:         process.env.MYSQL_PASS     || '',
-  database:         process.env.MYSQL_DATABASE || 'serbisko_db',
+  host:             process.env.DB_HOST     || '127.0.0.1',
+  port:    parseInt(process.env.DB_PORT     || '3306'),
+  user:             process.env.DB_USERNAME || 'root',
+  password:         process.env.DB_PASSWORD || '',
+  database:         process.env.DB_DATABASE || 'serbisko_clean',
   waitForConnections: true,
   connectionLimit:    10,
   queueLimit:          0,
@@ -37,17 +37,17 @@ const pool = mysql.createPool({
 (async () => {
   try {
     const conn = await pool.getConnection();
-    console.log('🐬 [MYSQL] Connection pool established successfully.');
+    console.log('ðŸ¬ [MYSQL] Connection pool established successfully.');
     conn.release();
   } catch (err) {
-    console.error('❌ [MYSQL] Failed to connect to the database:', err.message);
+    console.error('âŒ [MYSQL] Failed to connect to the database:', err.message);
     process.exit(1);
   }
 })();
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // SANITIZATION & HELPERS
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Converts all undefined values in a flat object to null.
@@ -61,9 +61,9 @@ function sanitizePayload(obj) {
   return out;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // KNOWN STUDENT-TABLE COLUMNS
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const STUDENT_COLUMNS = new Set([
   'sex', 'age', 'place_of_birth', 'mother_tongue',
@@ -84,9 +84,9 @@ const EXCLUDED_FROM_EXTRA = new Set([
   'isSynced', 'extra_fields', 'form_id', 'submitted_at',
 ]);
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // CORE PROCESSOR
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function processDocument(docId, rawInput) {
   const terminalStates = [true, 'rejected', 'limit_reached'];
@@ -96,7 +96,7 @@ async function processDocument(docId, rawInput) {
   const lrn = String(raw.lrn || '').trim();
 
   if (!lrn) {
-    console.warn(`⚠️  [SKIP] Document ${docId} has no LRN — skipping.`);
+    console.warn(`âš ï¸  [SKIP] Document ${docId} has no LRN â€” skipping.`);
     return 'skipped';
   }
 
@@ -105,7 +105,7 @@ async function processDocument(docId, rawInput) {
   try {
     await conn.beginTransaction();
 
-    // ── SCHOOL YEAR RESOLUTION ──
+    // â”€â”€ SCHOOL YEAR RESOLUTION â”€â”€
     // Fetch the school_year from the form definition itself.
     // This ensures submissions are tagged correctly even if multiple forms exist.
     let schoolYear = raw.school_year;
@@ -163,17 +163,17 @@ async function processDocument(docId, rawInput) {
 
     if (existingUser && existingUser.school_year === schoolYear && existingUser.is_manually_edited) {
       await conn.rollback();
-      console.log(`🔒 [LOCKED] LRN ${lrn} is manually edited — skipping auto-sync.`);
+      console.log(`ðŸ”’ [LOCKED] LRN ${lrn} is manually edited â€” skipping auto-sync.`);
       return 'skipped';
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // SUBMISSION LIMIT CHECK
     // Must run AFTER the lock check but BEFORE any identity validation or writes.
     // Counts all pre_enrollment rows ever recorded for this LRN (across versions),
     // which is the durable source of truth now that Firestore docs are deleted
     // after a successful sync.
-    // ─────────────────────────────────────────────────────────────────────────
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const SUBMISSION_LIMIT = 3;
 
     const [[{ submissionCount }]] = await conn.execute(
@@ -190,10 +190,10 @@ async function processDocument(docId, rawInput) {
         isSynced:    'limit_reached',
         syncMessage: 'Submission limit reached. Please contact the admin if you need to make changes.',
       });
-      console.log(`⛔ [LIMIT] Submission limit reached for LRN: ${lrn} (${submissionCount}/${SUBMISSION_LIMIT})`);
+      console.log(`â›” [LIMIT] Submission limit reached for LRN: ${lrn} (${submissionCount}/${SUBMISSION_LIMIT})`);
       return 'limit_reached';
     }
-    // ─────────────────────────────────────────────────────────────────────────
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     let userId = existingUser?.id || null;
 
@@ -234,7 +234,7 @@ async function processDocument(docId, rawInput) {
       );
       await conn.commit();
       await db.collection('responses').doc(docId).update({ isSynced: 'conflict' });
-      console.log(`🚨 [CONFLICT] ${conflictType} for LRN: ${lrn} - ${decision.reasons.join('; ')}`);
+      console.log(`ðŸš¨ [CONFLICT] ${conflictType} for LRN: ${lrn} - ${decision.reasons.join('; ')}`);
       return 'conflict';
     }
 
@@ -318,21 +318,21 @@ async function processDocument(docId, rawInput) {
 
     await conn.commit();
     await db.collection('responses').doc(docId).update({ isSynced: true });
-    console.log(`✅ [SYNCED] LRN ${lrn} — version ${v + 1} committed.`);
+    console.log(`âœ… [SYNCED] LRN ${lrn} â€” version ${v + 1} committed.`);
     return 'success';
 
   } catch (err) {
     if (conn) await conn.rollback();
-    console.error(`❌ [ERROR] DocID ${docId} | LRN ${lrn} | ${err.message}`);
+    console.error(`âŒ [ERROR] DocID ${docId} | LRN ${lrn} | ${err.message}`);
     throw err;
   } finally {
     if (conn) conn.release();
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // CONFIG RELOAD LOGIC
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const fs = require('fs');
 const path = require('path');
 
@@ -343,7 +343,7 @@ function reloadConfig() {
     for (const k in envConfig) {
       process.env[k] = envConfig[k];
     }
-    console.log('♻️  [.ENV] Configuration reloaded from .env file.');
+    console.log('â™»ï¸  [.ENV] Configuration reloaded from .env file.');
   }
 }
 
@@ -357,9 +357,9 @@ if (fs.existsSync(envPath)) {
   });
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // LISTENER & AUTO-RECONNECT
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 let unsubscribe = null;
 
@@ -367,32 +367,32 @@ let unsubscribe = null;
  * Performs a "sweep" of all pending documents.
  */
 async function syncSweep() {
-  console.log('🧹 [SWEEP] Refreshing sync for pending and conflict documents...');
+  console.log('ðŸ§¹ [SWEEP] Refreshing sync for pending and conflict documents...');
   try {
     const snap = await db.collection('responses')
       .where('isSynced', 'in', [false, 'conflict'])
       .get();
     
     if (snap.empty) {
-      console.log('✨ [SWEEP] No pending documents found.');
+      console.log('âœ¨ [SWEEP] No pending documents found.');
       return;
     }
 
-    console.log(`📦 [SWEEP] Found ${snap.size} documents to process. Processing...`);
+    console.log(`ðŸ“¦ [SWEEP] Found ${snap.size} documents to process. Processing...`);
     for (const doc of snap.docs) {
       await processDocument(doc.id, doc.data()).catch(err => {
-        console.error(`❌ [SWEEP ERROR] Failed to process ${doc.id}:`, err.message);
+        console.error(`âŒ [SWEEP ERROR] Failed to process ${doc.id}:`, err.message);
       });
     }
-    console.log('✅ [SWEEP] Completed.');
+    console.log('âœ… [SWEEP] Completed.');
   } catch (err) {
-    console.error('❌ [SWEEP ERROR] Sweep failed:', err.message);
+    console.error('âŒ [SWEEP ERROR] Sweep failed:', err.message);
   }
 }
 
 function startSync() {
   if (unsubscribe) {
-    console.log('🔄 [SYNC] Restarting Firestore listener...');
+    console.log('ðŸ”„ [SYNC] Restarting Firestore listener...');
     unsubscribe();
   }
 
@@ -404,7 +404,7 @@ function startSync() {
       if (docChanges.length > 0) {
         const addedCount = docChanges.filter(c => c.type === 'added').length;
         if (addedCount > 0) {
-          console.log(`🆕 [SYNC] Refreshing: ${addedCount} new submissions detected.`);
+          console.log(`ðŸ†• [SYNC] Refreshing: ${addedCount} new submissions detected.`);
         }
       }
 
@@ -413,13 +413,13 @@ function startSync() {
           try {
             await processDocument(change.doc.id, change.doc.data());
           } catch (err) {
-            console.error(`❌ [SYNC ERROR] Failed to process ${change.doc.id}:`, err.message);
+            console.error(`âŒ [SYNC ERROR] Failed to process ${change.doc.id}:`, err.message);
           }
         }
       }
     }, (error) => {
-      console.error('🔥 [FIRESTORE ERROR] Snapshot listener failed:', error.message);
-      console.log('⏳ [SYNC] Attempting to reconnect in 5 seconds...');
+      console.error('ðŸ”¥ [FIRESTORE ERROR] Snapshot listener failed:', error.message);
+      console.log('â³ [SYNC] Attempting to reconnect in 5 seconds...');
       setTimeout(startSync, 5000);
     });
 }
@@ -430,3 +430,4 @@ syncSweep();
 
 // Robust fallback: Run a sweep every 30 minutes to ensure total consistency
 setInterval(syncSweep, 30 * 60 * 1000);
+
