@@ -132,7 +132,7 @@ def ocr():
             },
             'birth_certificate': {
                 'strong': ['certificate of live birth', 'live birth', 'statistics', 'civil registrar', 'best possible image', 'national statistician'], 
-                'block': ['sf9', 'reportcard', 'report card', 'affidavit', 'live birth', 'birth certificate', 'basic education enrollment', 'certificate of live birth', 'als certificate','enrollment form','enrollment']
+                'block': ['sf9', 'reportcard', 'report card', 'affidavit', 'basic education enrollment', 'als certificate','enrollment form','enrollment']
             },
             'enroll_form': {
                 'strong': ['enrollment', 'basic education', 'enrollment form', 'registration form'],
